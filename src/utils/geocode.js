@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-const AWS = require('aws-sdk');
+import AWS from 'aws-sdk';
 const secretsManager = new AWS.SecretsManager();
 
 // Get the secret from AWS Secrets Manager
