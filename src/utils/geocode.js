@@ -1,4 +1,19 @@
-const request = require('request')
+import fetch from 'node-fetch';
+const AWS = require('aws-sdk');
+const secretsManager = new AWS.SecretsManager();
+
+// Get the secret from AWS Secrets Manager
+async function getSecret(SecretId) {
+	try {
+	  const data = await secretsManager.getSecretValue({ SecretId: SecretId }).promise();
+	  const secret = data.SecretString;
+	  console.log('Secret:', secret);
+	  return secret;
+	} catch (err) {
+	  console.error('Error retrieving secret:', err);
+	  return null;
+	}
+  }
 
 const geocode = (location, callback) => {
 	/**
@@ -8,6 +23,9 @@ const geocode = (location, callback) => {
 	 * Outputs either an error as string or the 
 	 *  number coordinates and string name.
 	 */
+
+	// Get Mapbox token from AWS Secrets Manager
+	const mapboxToken = getSecret("WT3-Mapbox-API-Token");
 
 	// Ensure the location is proper:
 	// Properly encoding:
@@ -32,26 +50,48 @@ const geocode = (location, callback) => {
 
 	// If there are no characters left in string:
 	if (location.length === 0) {
-		callback('Invalid input.', undefined)
+		return callback('Invalid input.', undefined)
 	}
 
-    const url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + location + '.json?access_token=pk.eyJ1IjoidHJpY2t5LWN1dGxlcnktNyIsImEiOiJjazR1YjV4Zjgzbm5tM2tuc2VjemRxa3I5In0.pJit0UFF58qsn--5BoSe0w&limit=1'
+	// Define the base URL
+	const baseUrl = new URL('https://api.example.com');
+	const geocodingUrl = new URL('geocoding/v5/mapbox.places/${location}.json', baseUrl);
 
-    request({ url, json: true }, (error, { body }) => {
-        if (error) {
-            callback('Unable to connect to location services!', undefined)
-        } else if (body.features === undefined) {
-            callback('Oh no! Either the mapbox service is down or we have run out of free uses of their service! My apologies!', undefined)
-        } else if (body.features.length === 0) {
-            callback('Unable to find location. Try another search.', undefined)
-        } else {
-            callback(undefined, {
-                latitude: body.features[0].center[1],
-                longitude: body.features[0].center[0],
-                parsedLocation: body.features[0].place_name
-            })
-        }
-    })
+	// Define the query parameters
+	const params = {
+		access_token: mapboxToken,
+		limit: 1
+	};
+
+	// Append query parameters to the URL
+	Object.keys(params).forEach(key => geocodingUrl.searchParams.append(key, params[key]));
+
+	// Output the constructed URL
+	console.log(geocodingUrl.toString());
+
+	fetch(geocodingUrl)
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Unable to connect to location services!');
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (data.features === undefined) {
+				throw new Error('Oh no! Either the mapbox service is down or we have run out of free uses of their service! My apologies!');
+			} else if (data.features.length === 0) {
+				throw new Error('Unable to find location. Try another search.');
+			} else {
+				callback(undefined, {
+					latitude: data.features[0].center[1],
+					longitude: data.features[0].center[0],
+					parsedLocation: data.features[0].place_name
+				});
+			}
+		})
+		.catch(error => {
+			callback(error.message, undefined);
+		});
 }
 
-module.exports = geocode
+export default geocode;

@@ -1,6 +1,28 @@
-const request = require('request')
+import fetch from 'node-fetch';
 
-function temporalAnalysis(latitude, longitude, ipAddress, callback) {
+async function makeRequest(url) {
+    try {
+        // Make request
+        const response = await fetch(url);
+
+        // Handle response
+        if (!response.ok) {
+            throw new Error('Unable to connect to time API service!');
+        }
+        const data = await response.json();
+        
+        // Handle data
+        if (data.error) {
+            throw new Error('Unable to find location or IP');
+        } else {
+            return [undefined, data];
+        }
+    } catch (error) {
+        return [error.message, undefined];
+    }
+}
+
+async function temporalAnalysis(latitude, longitude, ipAddress, callback) {
 	/** 
 	 * This is the function that gets the forecasted
 	 *  data, given a location.
@@ -9,85 +31,98 @@ function temporalAnalysis(latitude, longitude, ipAddress, callback) {
 	 *  array with the string data requested split
 	 *  into lines. It is ready to be displayed.
 	 */
-
-    function makeRequest(url) {
-        return request({ url, json: true }, (error, { body }) => {
-            if (error) {
-                return ['Unable to connect to time API service!', undefined]
-            } else if (body.error) {
-                return ['Unable to find location or IP', undefined]
-            } else {
-                return [undefined, body]
-            }
-        })
-    }
-    console.log("2")
-
     
+    console.log("latitude: " + latitude)
+    console.log("longitude: " + longitude)
+    console.log("ipAddress: " + ipAddress)
+
     // Define base urls and API urls
     const baseUrlStr = "https://timeapi.io"
     const baseUrl    = new URL("/", baseUrlStr)
     
-    const coordinateTimeUrl = new URL("api/Time/current/coordinate", baseUrl)
-    const IPTimeUrl         = new URL("api/Time/current/ip", baseUrl)
-    const timeZoneInfoUrl   = new URL("api/TimeZone/zone", baseUrl)
+    const coordinateTimePath = "api/Time/current/coordinate"
+    const IPTimePath         = "api/Time/current/ip"
+    const timeZoneInfoPath   = "api/TimeZone/zone"
 
     ////////////////
     //// Target ////
     ////////////////
+    console.log("Getting target time and data using coordinates")
     // Get target time and data using coordinates
     // Define parameter
     const coordinateTimeUrlParams = new URLSearchParams({
-        longitude: latitude,
-        latitude: longitude
+        longitude: longitude,
+        latitude: latitude
     });
 
     // Get Request URL
-    const coordinateTimeRequestUrl = new URL(coordinateTimeUrlParams, coordinateTimeUrl)
+    const coordinateTimeRequestParamsString = coordinateTimeUrlParams.toString();
+    const coordinateTimeRequestUrl          = new URL(`${coordinateTimePath}?${coordinateTimeRequestParamsString}`, baseUrl);
     
     // Execute Get Request
-    temp = makeRequest(coordinateTimeRequestUrl)
-    console.log(temp.callback())
-    coordinateErr = temp[0]
-    coordinateRes = temp[1]
+    var temp = await makeRequest(coordinateTimeRequestUrl)
+    const coordinateErr = temp[0]
+    const coordinateRes = temp[1]
     
     // Handle result
     if (coordinateErr) {
-        return [coordinateErr, undefined]
+        return callback(coordinateErr, undefined)  
     } 
-    //console.log(temp)
     
-    targetTime      = coordinateRes.time
-    targetDate      = coordinateRes.date
-    targetTimeZone  = coordinateRes.timeZone
-    targetDayOfWeek = coordinateRes.dayOfWeek
-    targetDstActive = coordinateRes.dstActive
+    const targetTime      = coordinateRes.time
+    const targetDate      = coordinateRes.date
+    const targetTimeZone  = coordinateRes.timeZone
+    const targetDayOfWeek = coordinateRes.dayOfWeek
+    const targetDstActive = coordinateRes.dstActive
 
     // Get TimeZone data
+    console.log("Getting target time zone data")
     // Define parameter
     const coordinateTimeZoneUrlParams = new URLSearchParams({
         timeZone: targetTimeZone
     });
 
     // Get Request URL
-    const coordinateTimeZoneRequestUrl = new URL(coordinateTimeZoneUrlParams, timeZoneInfoUrl)
+    const coordinateTimeZoneRequestParamsString = coordinateTimeZoneUrlParams.toString();
+    const coordinateTimeZoneRequestUrl          = new URL(`${timeZoneInfoPath}?${coordinateTimeZoneRequestParamsString}`, baseUrl);
 
 
     // Execute Get Request
-    temp = makeRequest(coordinateTimeZoneRequestUrl)
-    coordinateTimeZoneErr = temp[0]
-    coordinateTimeZoneRes = temp[1]
+    var temp = await makeRequest(coordinateTimeZoneRequestUrl)
+    const coordinateTimeZoneErr = temp[0]
+    const coordinateTimeZoneRes = temp[1]
     
     // Handle result
     if (coordinateTimeZoneErr) {
-        return [coordinateTimeZoneErr, undefined]
+        return callback(coordinateTimeZoneErr, undefined)  
     } 
-    targetUtcOffset = coordinateTimeZoneRes.currentUtcOffset
+
+    const targetUtcOffset = coordinateTimeZoneRes.currentUtcOffset
 
 
     ////////////////
     //// Source ////
     ////////////////
+    console.log("Getting source time and data using IP address")
+
+    // If the IP address is not provided or is localhost
+    if ( (!ipAddress) || (ipAddress === "::1") ) {
+        console.log("IP address not provided or is localhost")
+
+        return callback(
+            undefined, {
+                "target": {
+                    "time":      targetTime,
+                    "date":      targetDate,
+                    "timeZone":  targetTimeZone,
+                    "dayOfWeek": targetDayOfWeek,
+                    "dstActive": targetDstActive,
+                    "utcOffset": targetUtcOffset
+                }
+            }
+        )
+    }
+
     // Get user's current time and data using IP address
     // Define parameter
     const IPTimeUrlParams  = new URLSearchParams({
@@ -95,63 +130,71 @@ function temporalAnalysis(latitude, longitude, ipAddress, callback) {
     });
     
     // Get Request URL
-    const IPTimeRequestUrl = new URL(IPTimeUrlParams, baseIPTimeUrlUrl)
+    const IPTimeUrlParamsString = IPTimeUrlParams.toString();
+    const IPTimeRequestUrl      = new URL(`${IPTimePath}?${IPTimeUrlParamsString}`, baseUrl);
 
     // Execute Get Request
-    temp = makeRequest(coordinateTimeRequestUrl)
-    IPErr = temp[0]
-    IPRes = temp[1]
+    console.log("IPTimeRequestUrl: " + IPTimeRequestUrl)
+    var temp = await makeRequest(IPTimeRequestUrl)
+    const IPErr = temp[0]
+    const IPRes = temp[1]
     
     // Handle result
     if (IPErr) {
-        return [IPErr, undefined]
+        return callback(IPErr, undefined)
     }
-    sourceTime      = IPRes.time
-    sourceDate      = IPRes.date
-    sourceTimeZone  = IPRes.timeZone
-    sourceDayOfWeek = IPRes.dayOfWeek
-    sourceDstActive = IPRes.dstActive
+
+    const sourceTime      = IPRes.time
+    const sourceDate      = IPRes.date
+    const sourceTimeZone  = IPRes.timeZone
+    const sourceDayOfWeek = IPRes.dayOfWeek
+    const sourceDstActive = IPRes.dstActive
 
 
     // Get TimeZone data
+    console.log("Getting source time zone data")
     // Define parameter
     const IPTimeZoneUrlParams = new URLSearchParams({
         timeZone: sourceTimeZone
     });
 
     // Get Request URL
-    const IPTimeZoneRequestUrl = new URL(IPTimeZoneUrlParams, timeZoneInfoUrl)
+    const IPTimeZoneUrlParamsString = IPTimeZoneUrlParams.toString();
+    const IPTimeZoneRequestUrl          = new URL(`${timeZoneInfoPath}?${IPTimeZoneUrlParamsString}`, baseUrl);
 
     // Execute Get Request
-    temp = makeRequest(IPTimeZoneRequestUrl)
-    IPTimeZoneErr = temp[0]
-    IPTimeZoneRes = temp[1]
+    var temp = await makeRequest(IPTimeZoneRequestUrl)
+    const IPTimeZoneErr = temp[0]
+    const IPTimeZoneRes = temp[1]
     
     // Handle result
     if (IPTimeZoneErr) {
-        return [IPZoneErr, undefined]
+        return callback(IPZoneErr, undefined)
     } 
-    sourceUtcOffset = IPTimeZoneRes.currentUtcOffset
+    
+    const sourceUtcOffset = IPTimeZoneRes.currentUtcOffset
     
 
-    return [undefined, {
-        "target": {
-            "time":      targetTime,
-            "date":      targetDate,
-            "timeZone":  targetTimeZone,
-            "dayOfWeek": targetDayOfWeek,
-            "dstActive": targetDstActive,
-            "utcOffset": targetUtcOffset
-        },
-        "source": {
-            "time":      sourceTime,
-            "date":      sourceDate,
-            "timeZone":  sourceTimeZone,
-            "dayOfWeek": sourceDayOfWeek,
-            "dstActive": sourceDstActive,
-            "utcOffset": sourceUtcOffset
+    return callback(
+        undefined, {
+            "target": {
+                "time":      targetTime,
+                "date":      targetDate,
+                "timeZone":  targetTimeZone,
+                "dayOfWeek": targetDayOfWeek,
+                "dstActive": targetDstActive,
+                "utcOffset": targetUtcOffset
+            },
+            "source": {
+                "time":      sourceTime,
+                "date":      sourceDate,
+                "timeZone":  sourceTimeZone,
+                "dayOfWeek": sourceDayOfWeek,
+                "dstActive": sourceDstActive,
+                "utcOffset": sourceUtcOffset
+            }
         }
-    }]
+    )
 }
 
-module.exports = temporalAnalysis
+export default temporalAnalysis;

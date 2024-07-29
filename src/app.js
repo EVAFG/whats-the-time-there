@@ -4,19 +4,19 @@
  * This also handles the handlebars engine.
  */
 
-const path = require('path')
-const express = require('express')
-const hbs = require('hbs')
-const geocode = require('./utils/geocode')
-const temporalAnalysis = require('./utils/temporalAnalysis')
+import path from 'path';
+import express from 'express';
+import hbs from 'hbs';
+import geocode from './utils/geocode.js';
+import temporalAnalysis from './utils/temporalAnalysis.js';
 
 const app = express()
 const port = process.env.PORT || 3000
 
 // Define paths for Express config
-const publicDirectoryPath = path.join(__dirname, '../public')
-const viewsPath = path.join(__dirname, '../templates/views')
-const partialsPath = path.join(__dirname, '../templates/partials')
+const publicDirectoryPath = path.join(path.resolve(), 'public');
+const viewsPath = path.join(path.resolve(), 'templates', 'views');
+const partialsPath = path.join(path.resolve(), 'templates', 'partials');
 
 // Setup handlebars engine and views location
 app.set('view engine', 'hbs')
@@ -69,9 +69,9 @@ app.get('/getTime', (req, res) => {
                 return res.send({ error })
             }
 
-            temporalAnalysisData.update({
-                parsedLocation: parsedLocation
-            })
+            // Add parsed location to temporalAnalysisData
+            temporalAnalysisData.parsedLocation = parsedLocation
+            temporalAnalysisData.ipAddress = req.ip
 
             res.send(temporalAnalysisData)
         })

@@ -64,7 +64,12 @@ searchForm.addEventListener('submit', e => {
                 messageOne.textContent   = `It is currently ${data.target.time} ${data.target.dayOfWeek}, ${data.target.date} `
                 messageTwo.textContent   = ` at ${data.parsedLocation}; in time zone ${data.target.timeZone}`
                 messageThree.textContent = `That is at UTC +/- ${(data.target.utcOffset.seconds)/3600} hours.`
-                messageFour.textContent  = `Offset from your current time ${(data.target.utcOffset.seconds - data.source.utcOffset.seconds)/3600} hours`
+                
+                if ( (data.ipAddress) && (data.ipAddress !== "::1") ) {
+                    messageFour.textContent  = `Offset from your current time ${(data.target.utcOffset.seconds - data.source.utcOffset.seconds)/3600} hours`
+                } else {
+                    messageFour.textContent  = `Your current time is not available, offset unknown.`
+                }
 
                 console.log(temporalAnalysisDataOne)
                 console.log(temporalAnalysisDataTwo)
