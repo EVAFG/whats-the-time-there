@@ -2,6 +2,8 @@ import fetch from 'node-fetch';
 import AWS from 'aws-sdk';
 const secretsManager = new AWS.SecretsManager();
 
+AWS.config.update({ region: 'us-east-1' });
+
 function getSecret(SecretId, callback) {
     secretsManager.getSecretValue({ SecretId: SecretId }, (err, data) => {
         if (err) {
