@@ -79,7 +79,7 @@ const geocode = (location, callback) => {
 	
 		// Define the query parameters
 		const params = {
-			access_token: res.access_token,
+			access_token: res["access_token"],
 			limit: 1
 		};
 	
