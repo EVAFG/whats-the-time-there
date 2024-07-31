@@ -39,7 +39,7 @@ const geocode = (location, callback) => {
 	 */
 
 	// Get Mapbox token from AWS Secrets Manager
-	getSecret("WT3-Mapbox-API-Token", (err, mapboxToken) => {
+	getSecret("WT3-Mapbox-API-Token", (err, res) => {
 		// Handle error
         if (err) {
             console.error('Error retrieving mapbox data - could not get access token:', err);
@@ -79,7 +79,7 @@ const geocode = (location, callback) => {
 	
 		// Define the query parameters
 		const params = {
-			access_token: mapboxToken,
+			access_token: res.access_token,
 			limit: 1
 		};
 	
