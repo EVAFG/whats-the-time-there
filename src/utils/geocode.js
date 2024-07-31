@@ -46,8 +46,6 @@ const geocode = (location, callback) => {
             callback(err, null);
             return;
         }
-		console.log('res: ${res}');
-		console.log('res content: ${JSON.parse(res)}');
 
 		// Handle missing access token
 		if (!res) {
@@ -88,9 +86,9 @@ const geocode = (location, callback) => {
 		const geocodingUrl = new URL('geocoding/v5/mapbox.places/${location}.json', baseUrl);
 	
 		// Define the query parameters
-		console.log('res: ${res}');
+		console.log(`res: ${res}`);
 		access_token = JSON.parse(res).access_token;
-		console.log('access_token: ${access_token}');
+		console.log(`access_token: ${access_token}`);
 		const params = {
 			access_token: access_token,
 			limit: 1
