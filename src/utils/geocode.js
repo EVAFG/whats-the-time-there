@@ -83,7 +83,7 @@ const geocode = (location, callback) => {
 	
 		// Define the base URL
 		const baseUrl = new URL('https://api.mapbox.com');
-		const geocodingUrl = new URL('geocoding/v5/mapbox.places/${location}.json', baseUrl);
+		const geocodingUrl = new URL(`geocoding/v5/mapbox.places/${location}.json`, baseUrl);
 	
 		// Define the query parameters
 		console.log(`res: ${res}`);
