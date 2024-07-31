@@ -46,6 +46,16 @@ const geocode = (location, callback) => {
             callback(err, null);
             return;
         }
+		console.log('res: ${res}');
+		console.log('res content: ${JSON.parse(res)}');
+
+		// Handle missing access token
+		if (!res) {
+			const error = new Error('Access token is missing in the response');
+			console.error(error.message);
+			callback(error, null);
+			return;
+		}
 
 		// Ensure the location is proper:
 		// Properly encoding:
