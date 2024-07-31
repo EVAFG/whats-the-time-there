@@ -87,7 +87,7 @@ const geocode = (location, callback) => {
 	
 		// Define the query parameters
 		console.log(`res: ${res}`);
-		access_token = JSON.parse(res).access_token;
+		var access_token = JSON.parse(res)["access_token"];
 		console.log(`access_token: ${access_token}`);
 		const params = {
 			access_token: access_token,
