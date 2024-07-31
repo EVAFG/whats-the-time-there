@@ -1,19 +1,30 @@
 import fetch from 'node-fetch';
 import AWS from 'aws-sdk';
-const secretsManager = new AWS.SecretsManager();
 
 AWS.config.update({ region: 'us-east-1' });
 
 function getSecret(SecretId, callback) {
+	var secretsManager = new AWS.SecretsManager();
     secretsManager.getSecretValue({ SecretId: SecretId }, (err, data) => {
+		// Handle error
         if (err) {
             console.error('Error retrieving secret:', err);
-            callback(null);
+            callback(err, null);
             return;
         }
+		
+		// Handle missing SecretString
+        if (!data || !data.SecretString) {
+            const error = new Error('SecretString is missing in the response');
+            console.error(error.message);
+            callback(error, null);
+            return;
+        }
+
+		// Return the secret
         const secret = data.SecretString;
         console.log('Secret:', secret);
-        callback(secret);
+        callback(null, secret);
     });
 }
 
@@ -28,8 +39,13 @@ const geocode = (location, callback) => {
 	 */
 
 	// Get Mapbox token from AWS Secrets Manager
-	getSecret("WT3-Mapbox-API-Token", (mapboxToken) => {
-
+	getSecret("WT3-Mapbox-API-Token", (err, mapboxToken) => {
+		// Handle error
+        if (err) {
+            console.error('Error retrieving mapbox data - could not get access token:', err);
+            callback(err, null);
+            return;
+        }
 
 		// Ensure the location is proper:
 		// Properly encoding:
@@ -58,7 +74,7 @@ const geocode = (location, callback) => {
 		}
 	
 		// Define the base URL
-		const baseUrl = new URL('https://api.example.com');
+		const baseUrl = new URL('https://api.mapbox.com');
 		const geocodingUrl = new URL('geocoding/v5/mapbox.places/${location}.json', baseUrl);
 	
 		// Define the query parameters
