@@ -132,7 +132,7 @@ async function temporalAnalysis(latitude, longitude, ipAddress, callback) {
     // Get user's current time and data using IP address
     // Define parameter
     const IPTimeUrlParams  = new URLSearchParams({
-        ip: ipAddress
+        ipAddress: ipAddress
     });
     
     // Get Request URL
