@@ -23,7 +23,6 @@ function getSecret(SecretId, callback) {
 
 		// Return the secret
         const secret = data.SecretString;
-        console.log('Secret:', secret);
         callback(null, secret);
     });
 }
@@ -86,9 +85,7 @@ const geocode = (location, callback) => {
 		const geocodingUrl = new URL(`geocoding/v5/mapbox.places/${location}.json`, baseUrl);
 	
 		// Define the query parameters
-		console.log(`res: ${res}`);
 		var access_token = JSON.parse(res)["access_token"];
-		console.log(`access_token: ${access_token}`);
 		const params = {
 			access_token: access_token,
 			limit: 1
@@ -97,9 +94,7 @@ const geocode = (location, callback) => {
 		// Append query parameters to the URL
 		Object.keys(params).forEach(key => geocodingUrl.searchParams.append(key, params[key]));
 	
-		// Output the constructed URL
-		console.log(geocodingUrl.toString());
-	
+		// Fetch the data
 		fetch(geocodingUrl)
 			.then(response => {
 				if (!response.ok) {

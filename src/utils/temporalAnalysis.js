@@ -7,12 +7,18 @@ async function makeRequest(url) {
 
         // Handle response
         if (!response.ok) {
+            console.error('Error:', response.statusText);
+            console.error('Status:', response.status);
+            console.error('URL:', url);
             throw new Error('Unable to connect to time API service!');
         }
         const data = await response.json();
         
         // Handle data
         if (data.error) {
+            console.error('Error:', data.error);
+            console.error('Message:', data.message);
+            console.error('URL:', url);
             throw new Error('Unable to find location or IP');
         } else {
             return [undefined, data];
